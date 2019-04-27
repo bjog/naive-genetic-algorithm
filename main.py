@@ -3,7 +3,7 @@
 
 import random
 
-MAX_GENERATIONS = 100
+MAX_GENERATIONS = 1000
 TARGET_VALUE = "11111111"
 TARGET_GENERATION_FITNESS = 0.9
 GENERATION_SIZE = 10
@@ -14,14 +14,14 @@ def fitness(x):
     score = 0.0
     for c in x:
         if c == "1":
-            score += 1/GENERATION_SIZE
+            score += 1/len(TARGET_VALUE)
     return score
 
 def initialise():
     generation = []
     for i in range(GENERATION_SIZE):
         x = ""
-        for j in range(0,8):
+        for j in range(0,len(TARGET_VALUE)):
             if (random.random() > 0.5):
                 x += "1"
             else:
@@ -43,7 +43,7 @@ def mutate(x):
 
 def reproduce(p,q):
     r = ""
-    for i in range(0,8):
+    for i in range(0,len(TARGET_VALUE)):
         if(p[i] == q[i]):
             if(random.random() <= PROPAGATION_CHANCE):
                 r += p[i]
@@ -67,7 +67,7 @@ def compatible(p,q):
     else:
         return 0
 
-def parent_selection(population, fitnesses):
+def select_parents(population, fitnesses):
     parents = []
     for f in fitnesses:
         fList = [f for i in range(len(fitnesses))]
@@ -80,14 +80,12 @@ def parent_selection(population, fitnesses):
 
     return parents
 
-def survivor_selection(population, fitnesses):
+def select_survivors(population, fitnesses):
     ranks = rank(fitnesses)
-    print(ranks)
     survivors = []
 
     for i in range(len(population)):
         if(ranks[i] >= (len(population) - GENERATION_SIZE)):
-            print("{0} rank: {1}".format(population[i],ranks[i]))
             survivors.append(population[i])
     return survivors
 
@@ -109,16 +107,24 @@ def generate_offspring(population, parents):
 
 def main():
     population = initialise()
+    print(population)
+    
+    for i in range(MAX_GENERATIONS):
+        populationScores = list(map(fitness,population))
+        print("Generation:{0}\tSize:{1}\tAvg.Fitness:{2}".format(i, len(population), sum(populationScores)/len(population)))
+        
+        parents = select_parents(population,populationScores)
 
-    mutatedPopulation = list(map(mutate,population))
-    scores = list(map(fitness,population))
-    scores = list(map(fitness, mutatedPopulation))
+        offspring = generate_offspring(population,parents)
+        mutatedOffspring = list(map(mutate,offspring))
 
-    parents = parent_selection(population,scores)
-    offspring = generate_offspring(population,parents)
-    print(offspring)
-    survivors = survivor_selection(offspring, list(map(fitness,offspring)))
-    print(survivors)
+        offspringScores = list(map(fitness, mutatedOffspring))
+        survivingOffspring = select_survivors( mutatedOffspring, offspringScores)
+
+        population = survivingOffspring
+
+    print("Generation:{0}\tSize:{1}\tAvg.Fitness:{2}".format(i + 1, len(population), sum(list(map(fitness,population)))/len(population)))
+    print(population)
 
 if __name__ == "__main__":
     main()
